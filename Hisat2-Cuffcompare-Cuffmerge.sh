@@ -296,7 +296,7 @@ cufflinks_SRA_multi()
         mv "$bam_out"/skipped.gtf  "$bam_out"/$f.skipped.gtf
         coverge_cuffoff_SRA_multi  
         cuffcompare "$bam_out"/$f.gtf.filtered.gtf -r $user_referenceannotation -o $f
-        mv *.tracking *.loci *.combined.gtf "$bam_out"
+        mv *.tracking *.loci *.combined.gtf *.stats "$bam_out"
     elif [ -z "$user_referenceannotation" ] && [ ! -z "$referenceannotation" ]; then
         cufflinks "$bam_out"/$f.sorted.bam -p $num_threads -g $referenceannotation -o "$bam_out"
         mv "$bam_out"/transcripts.gtf "$bam_out"/$f.gtf
@@ -371,7 +371,7 @@ cufflinks_non_SRA()
         mv "$bam_out"/genes.fpkm_tracking "$bam_out"/$filename.genes.fpkm_tracking
         coverge_cuffoff_non_SRA        
         cuffcompare "$bam_out"/$filename.gtf.filtered.gtf -r $user_referenceannotation -o $filename
-        mv *.tracking *.loci *.combined.gtf "$bam_out"
+        mv *.tracking *.loci *.combined.gtf *.stats "$bam_out"
     elif [ -z "$user_referenceannotation" ] && [ ! -z "$referenceannotation" ]; then
         cufflinks "$bam_out"/$filename.sorted.bam -p $num_threads -g $referenceannotation -o "$bam_out"
         mv "$bam_out"/skipped.gtf "$bam_out"/$filename.skipped.gtf
@@ -391,10 +391,10 @@ cufflinks_non_SRA()
 cuff_merge_fun()
 {
     if [ ! -z "$user_referenceannotation" ] && [ -z "$referenceannotation" ] && [ "$cuff_merge" != 0 ]; then
-        ls "$bam_out"/*combined.gtf | tr "\t" "\n" >> "$bam_out"/gtf_file.txt 
+        ls "$bam_out"/*filtered.gtf | tr "\t" "\n" >> "$bam_out"/gtf_file.txt 
         cuffmerge -o "$bam_out"/merged_out -g $user_referenceannotation "$bam_out"/gtf_file.txt -p $num_threads
     elif [ -z "$user_referenceannotation" ] && [ ! -z "$referenceannotation" ] && [ "$cuff_merge" != 0 ]; then
-        ls "$bam_out"/*combined.gtf | tr "\t" "\n" >> "$bam_out"/gtf_file.txt 
+        ls "$bam_out"/*filtered.gtf | tr "\t" "\n" >> "$bam_out"/gtf_file.txt 
         cuffmerge -o "$bam_out"/merged_out -g $referenceannotation "$bam_out"/gtf_file.txt -p $num_threads
     fi
 }
