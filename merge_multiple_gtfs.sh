@@ -12,7 +12,7 @@
 
 usage() {
       echo ""
-      echo "Usage : sh $0 -g reference genome -o reference gtf"
+      echo "Usage : sh $0 -g reference genome -o reference gtf -d directory"
       echo ""
 
 cat <<'EOF'
@@ -20,16 +20,21 @@ cat <<'EOF'
 
   -o </path/to/refefence gtf>
 
+  -d </parent/directory/of/gtfs>
+
 EOF
     exit 0
 }  
-while getopts ":g:o:" opt; do
+while getopts ":g:o:d:" opt; do
   case $opt in
     g)
      genome=$OPTARG
       ;;  
     o)
      gtf=$OPTARG
+      ;;
+    d)
+     directory=$OPTARG
       ;;
     h)
     usage
@@ -40,19 +45,21 @@ done
 
 # Find the updated lincRNA gtf files
 
-find . -name "*lincRNA.updated.gtf" -print > list_of_gtfs.txt
-
+find $directory -name "*lincRNA.updated.gtf" -print > list_of_gtfs.txt
 cat list_of_gtfs.txt | while read line 
 do 
-  grep 'lincRNA' $line > $line.lincRNA.for.merging
-  grep 'uncertain' $line > $line.unstranded.only
+  grep 'lincRNA' $line > temporary.file
+  lincRNA=$(echo $line | sed 's~\.~~g' | sed 's~\/~~g')
+  echo "assigned new variable"
+  mv temporary.file $lincRNA.lincRNA.for.merging
+  grep 'uncertain' $line > $lincRNA.unstranded.only
 done
 
 # lincRNA
 
-find . -name "*lincRNA.for.merging*" -print > list_of_gtfs.txt
+find . -name "*lincRNA.for.merging*" -print > list_of_lincRNAs.txt
 
-cuffmerge -s $genome list_of_gtfs.txt
+cuffmerge -s $genome list_of_lincRNAs.txt
 
 find -name "merged.gtf" -exec mv {} ./all_lincRNAs_merged.gtf \;
 
@@ -88,6 +95,12 @@ sed 's~Cufflinks~Evolinc~g' all_lincRNAs_merged_sorted.gtf > Updated_lincRNAs.gt
 
 gffread -w Updated_lincRNAs.fa -g $genome Updated_lincRNAs.gtf
 
+#Clean up lincRNA IDs
+
+sed -i 's~ gene=~~g' Updated_lincRNAs.fa
+sed -i 's~TCONS_~lincRNA.ID.~g' Updated_lincRNAs.fa
+sed -i 's~XLOC_~.locus.ID.~g' Updated_lincRNAs.fa
+
 # Update the reference gtf file
 
 cat Updated_lincRNAs.gtf $gtf > Updated.gtf
@@ -96,5 +109,5 @@ sortBed -i Updated.gtf > Final_updated.gtf
 
 # Clean up
 
-rm list_of_gtfs.txt all_lincRNAs_merged.gtf all_lincRNAs_merged_sorted.gtf list_of_unstranded.txt unstranded_lincRNAs_merged.gtf unstranded_lincRNAs_merged_sorted.gtf lincRNAs_for_renaming.gtf lincRNA_first_column.txt 
-rm lincRNA_second_column.txt lincRNA_renaming_list.txt Updated_lincRNAs.gtf Updated.gtf -r merged_asm
+rm list_of_lincRNAs.txt list_of_gtfs.txt *for.merging all_lincRNAs_merged.gtf all_lincRNAs_merged_sorted.gtf list_of_unstranded.txt unstranded_lincRNAs_merged.gtf unstranded_lincRNAs_merged_sorted.gtf lincRNAs_for_renaming.gtf lincRNA_first_column.txt 
+rm *unstranded.only lincRNA_second_column.txt lincRNA_renaming_list.txt Updated_lincRNAs.gtf Updated.gtf *fai -r merged_asm
